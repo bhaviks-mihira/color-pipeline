@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ACES Color Pipeline Reference — CGI Stylized Feature Animation</title>
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --panel: #12151c;
+      --panel-alt: #1a1f2b;
+      --ink: #f1f4f8;
+      --muted: #8b95a7;
+      --accent: #00d4ff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --border: #2a3142;
+      --chip: #1e2430;
+      --glow: rgba(0, 212, 255, 0.15);
+      --mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: var(--sans); line-height: 1.6; font-size: 15px;
+    }
+    .wrap { max-width: 1440px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    header { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 32px; }
+    header h1 {
+      font-size: clamp(24px, 4vw, 36px); margin: 0 0 12px; font-weight: 700;
+      background: linear-gradient(135deg, var(--ink) 0%, var(--accent) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { color: var(--muted); font-size: 16px; margin: 0 0 20px; line-height: 1.5; }
+    .draft-notice {
+      display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+      border: 2px solid var(--warning); border-radius: 12px; color: var(--warning); font-weight: 600; margin: 20px 0;
+    }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--border);
+      border-radius: 999px; background: var(--chip); color: var(--ink); font-size: 13px; font-weight: 500; transition: all 0.2s;
+    }
+    .badge:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--glow); }
+    .badge code {
+      font-family: var(--mono); font-size: 12px; background: rgba(0,212,255,0.15);
+      padding: 2px 6px; border-radius: 4px; color: var(--accent);
+    }
+    .version-info {
+      display: inline-flex; align-items: center; gap: 12px; padding: 10px 18px;
+      background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,212,255,0.05));
+      border: 1px solid var(--accent); border-radius: 8px; font-size: 14px; color: var(--accent);
+      font-weight: 600; margin-top: 16px;
+    }
+
+    /* Boxes */
+    .info-box {
+      background: var(--panel); border: 1px solid var(--border);
+      border-left: 4px solid var(--info); border-radius: 8px; padding: 20px; margin: 24px 0;
+    }
+    .info-box h3 { color: var(--info); margin: 0 0 12px; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+    .info-box em { color: var(--accent); font-style: normal; font-weight: 500; }
+
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05));
+      border: 2px solid var(--success); border-radius: 12px; padding: 20px; margin: 24px 0;
+    }
+    .highlight-box h3 { color: var(--success); margin-top: 0; }
+
+    /* Sections */
+    section {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      padding: 24px; margin-top: 24px; transition: all 0.3s;
+    }
+    section:hover { border-color: rgba(0,212,255,0.3); box-shadow: 0 4px 24px rgba(0,212,255,0.05); }
+    section h2 {
+      margin: 0 0 16px; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px;
+    }
+    section h3 { margin: 24px 0 12px; font-size: 16px; font-weight: 600; color: var(--accent); }
+    .section-icon {
+      width: 28px; height: 28px; background: var(--accent); border-radius: 6px; display: flex; align-items: center;
+      justify-content: center; font-weight: bold; color: var(--bg); font-size: 14px;
+    }
+
+    /* Tables */
+    .table-wrap { overflow: auto; border-radius: 12px; border: 1px solid var(--border); margin: 20px 0; background: #0a0c11; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1100px; }
+    th, td { padding: 14px 16px; border-bottom: 1px solid var(--border); border-right: 1px solid rgba(42,49,66,0.5); vertical-align: top; text-align: left; }
+    th:last-child, td:last-child { border-right: none; }
+    th {
+      font-weight: 600; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      background: var(--panel); position: sticky; top: 0; z-index: 10;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(0,212,255,0.02); }
+    td strong { color: var(--ink); font-weight: 600; }
+    .benefit { display: block; color: var(--success); font-size: 12px; margin-top: 4px; }
+
+    /* Code blocks */
+    code, kbd {
+      font-family: var(--mono); font-size: 13px; background: rgba(0,212,255,0.1);
+      padding: 2px 8px; border: 1px solid rgba(0,212,255,0.2); border-radius: 6px; color: var(--accent);
+    }
+    pre {
+      background: #0a0c11; border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px; overflow-x: auto; margin: 16px 0;
+    }
+    pre code { background: none; border: none; padding: 0; color: var(--ink); display: block; line-height: 1.5; }
+    .config-block {
+      background: #0a0c11; border: 1px solid var(--border); border-left: 4px solid var(--accent);
+      border-radius: 8px; padding: 16px; margin: 16px 0;
+    }
+    .config-block .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+    /* Two-column grids (desktop), stack to one column on small screens */
+    .two-col-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 900px) {
+      .two-col-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Rule cards */
+    .rules { /* now a two-col grid */ }
+    .rule {
+      background: var(--panel-alt); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+      transition: all 0.2s;
+    }
+    .rule:hover { border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,212,255,0.1); }
+    .rule-number { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--accent); color: var(--bg); border-radius: 50%; font-weight: bold; font-size: 14px; margin-right: 12px; }
+    .rule strong { display: inline; color: var(--ink); font-weight: 600; font-size: 16px; }
+    .rule .description { display: block; margin-top: 8px; color: var(--muted); font-size: 14px; }
+    .rule .example { display: block; margin-top: 12px; padding: 12px; background: #0a0c11; border-radius: 6px; font-size: 13px; border: 1px solid rgba(42,49,66,0.5); line-height: 1.5; }
+    .rule .example strong { color: var(--success); font-size: 12px; display: block; margin-bottom: 6px; }
+    .rule .why { display: block; margin-top: 12px; padding: 12px; background: rgba(59,130,246,0.05); border-left: 3px solid var(--info); border-radius: 6px; font-size: 13px; color: var(--ink); }
+
+    /* Impl/Quick cards use same pattern */
+    .impl-card {
+      background: var(--panel-alt); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
+      transition: all 0.2s;
+    }
+    .impl-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,212,255,0.1); }
+    .impl-card h4 { margin: 0 0 12px; color: var(--accent); font-size: 15px; font-weight: 600; }
+
+    /* Monitors */
+    .monitor-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px; margin: 20px 0;
+    }
+    .monitor-card { background: var(--panel-alt); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .monitor-card h4 { color: var(--accent); margin: 0 0 12px; font-size: 15px; }
+    .spec-list { list-style: none; padding: 0; margin: 12px 0; }
+    .spec-list li { padding: 8px 0; border-bottom: 1px solid rgba(42,49,66,0.3); font-size: 14px; }
+    .spec-list li:last-child { border-bottom: none; }
+    .spec-list strong { color: var(--muted); font-weight: 500; display: inline-block; min-width: 100px; }
+
+    /* Side-by-side config blocks under monitors */
+    .config-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 8px; }
+    @media (min-width: 900px) {
+      .config-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    /* Checklist & alert */
+    .checklist { list-style: none; padding: 0; margin: 16px 0; }
+    .checklist li {
+      padding: 12px 16px; margin: 8px 0; background: var(--panel-alt);
+      border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: flex-start;
+      gap: 12px; transition: all 0.2s; font-size: 14px;
+    }
+    .checklist li:hover { border-color: var(--accent); background: rgba(0,212,255,0.02); }
+    .checklist li::before { content: "✓"; color: var(--success); font-weight: bold; font-size: 16px; margin-top: -2px; }
+
+    .critical-alert {
+      background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+      border: 2px solid var(--danger); border-radius: 12px; padding: 20px; margin: 24px 0;
+    }
+    .critical-alert h3 { color: var(--danger); margin-top: 0; display: flex; align-items: center; gap: 10px; }
+
+    /*@media print { body { background: white; color: black; } section { border: 1px solid #ccc; box-shadow: none; } }*/
+    @media print { body { background: var(--bg); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>ACES Color Pipeline Reference</h1>
+      <p class="subtitle">CGI Stylized Feature Animation — Production Color Management</p>
+
+      <div class="draft-notice">📝 DRAFT DOCUMENT — For stakeholder review, validation, and amendment. Not final implementation guidance.</div>
+
+      <div class="badge-row">
+        <span class="badge">Working: <code>ACEScg (Linear, AP1 Primaries)</code></span>
+        <span class="badge">Viewing: <code>ACES 1.3 ODT → Target Display</code></span>
+        <span class="badge">Archive: <code>ACES2065-1 (AP0 Primaries)</code></span>
+      </div>
+
+      <div class="version-info">
+        <span>VFX Platform CY2025: OCIO 2.4.x | ACES 1.3 | Testing Required Before Lock</span>
+      </div>
+    </header>
+
+    <!-- Key Terms -->
+    <div class="info-box">
+      <h3>ℹ️ Key Terms</h3>
+      <p><strong>IDT (Input Device Transform):</strong> Converts various input formats (camera footage, textures, etc.) into our working ACEScg color space. <em>Net Effect:</em> Ensures all source materials speak the same color language, preventing color mismatches between departments.</p>
+      <p><strong>ODT (Output Device Transform):</strong> Converts ACEScg imagery to specific display formats (monitor, projector, TV). <em>Net Effect:</em> What you see accurately represents how it will appear on the target medium, without permanently altering the source data.</p>
+      <p><strong>ACEScg:</strong> Our linear working color space with AP1 primaries. <em>Why It Matters:</em> Wider gamut than sRGB, mathematically predictable for CG lighting calculations, prevents color clipping.</p>
+      <p><strong>ACES2065-1:</strong> Archive format with AP0 primaries. <em>Why It Matters:</em> Future-proof storage that encompasses all visible colors, ensuring remasters are possible decades later.</p>
+    </div>
+
+    <!-- Future Flexibility -->
+    <div class="highlight-box">
+      <h3>✨ Future Flexibility — Key Benefit</h3>
+      <p><strong>Since all CG renders and composites are maintained in ACEScg linear color space, any future delivery requirements can be met without re-rendering the entire film.</strong></p>
+      <p><strong>Example Scenario:</strong> Client requests HDR version after theatrical release? Convert the archived ACEScg/ACES2065-1 masters → Rec.2020 PQ, perform trim passes and QC in the DI, then re-export — no shot re-rendering required.</p>
+    </div>
+
+    <!-- 1) Pipeline Matrix -->
+    <section>
+      <h2><span class="section-icon">1</span>Complete Production Pipeline Matrix</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Stage / Use Case</th>
+              <th>Working Color Space</th>
+              <th>Transform / LUT</th>
+              <th>DCC / Tooling</th>
+              <th>Viewing Device</th>
+              <th>Purpose & Benefit</th>
+              <th>Critical Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Pre-Production / Look Dev</strong></td>
+              <td>ACEScg (Linear, AP1)</td>
+              <td>Show Look LUT (if stylized)</td>
+              <td>Nuke, DaVinci Resolve</td>
+              <td>P3-D65 reference monitor</td>
+              <td><span class="benefit">✓ Establishes consistent visual style early<br/>✓ Prevents subjective color decisions later</span></td>
+              <td>For stylized animation, create artistic LUTs here. Different from live-action CDL workflow.</td>
+            </tr>
+            <tr>
+              <td><strong>Asset Creation / Modeling</strong></td>
+              <td>ACEScg (Linear, AP1)</td>
+              <td>None (native space)</td>
+              <td>Maya, Houdini</td>
+              <td>sRGB via OCIO viewer</td>
+              <td><span class="benefit">✓ Assets built in final color space<br/>✓ No conversion errors later</span></td>
+              <td>Include MacBeth chart in turntables for validation.</td>
+            </tr>
+            <tr>
+              <td><strong>Texture Painting</strong></td>
+              <td>ACEScg (Linear, AP1)</td>
+              <td>sRGB-Texture → ACEScg IDT</td>
+              <td>Mari, Substance Painter, Photoshop</td>
+              <td>sRGB calibrated display</td>
+              <td><span class="benefit">✓ Textures correctly linearized for physically accurate rendering<br/>✓ Consistent look across all assets</span></td>
+              <td>Color maps: IDT required. Data maps (normal/rough): Raw, no transform.</td>
+            </tr>
+            <tr>
+              <td><strong>Lighting & Rendering</strong></td>
+              <td>ACEScg (Linear, AP1)</td>
+              <td>OCIO display only</td>
+              <td>Arnold, Karma, RenderMan</td>
+              <td>P3-D65 via OCIO</td>
+              <td><span class="benefit">✓ Physically accurate light calculations<br/>✓ Predictable multi-bounce illumination</span></td>
+              <td>16-bit half-float EXR minimum. Embed AP1 primaries metadata.</td>
+            </tr>
+            <tr>
+              <td><strong>Compositing</strong></td>
+              <td>ACEScg (Linear, AP1)</td>
+              <td>Viewer: ACES ODT only</td>
+              <td>Nuke</td>
+              <td>P3-D65 reference</td>
+              <td><span class="benefit">✓ Non-destructive color pipeline<br/>✓ Infinite adjustment capability</span></td>
+              <td>Never bake viewer transforms. All writes stay ACEScg.</td>
+            </tr>
+            <tr>
+              <td><strong>Editorial / Dailies</strong></td>
+              <td>ACEScg sources</td>
+              <td>ACES 1.3 ODT → Rec.709</td>
+              <td>RV, DaVinci Resolve, Premiere Pro</td>
+              <td>sRGB/Rec.709 calibrated</td>
+              <td><span class="benefit">✓ Consistent viewing across all stakeholders<br/>✓ Accurate creative decisions</span></td>
+              <td>Mark all editorial exports "TEMP COLOR - NOT FINAL"</td>
+            </tr>
+            <tr>
+              <td><strong>DI / Final Color</strong></td>
+              <td>ACES2065-1 (AP0)</td>
+              <td>Creative grade + trim passes</td>
+              <td>DaVinci Resolve Studio</td>
+              <td>Calibrated reference display</td>
+              <td><span class="benefit">✓ Maximum color fidelity for grading<br/>✓ All colors preserved for archive</span></td>
+              <td>Grade in AP0 space. Create separate trim passes per delivery format.</td>
+            </tr>
+            <tr style="background: rgba(0,212,255,0.05);">
+              <td><strong>Theatrical Delivery</strong></td>
+              <td>ACES2065-1 master</td>
+              <td>ACES ODT → DCI-P3 X'Y'Z'</td>
+              <td>Resolve (DCP creation)</td>
+              <td>Cinema projector</td>
+              <td><span class="benefit">✓ Cinema-optimized presentation<br/>✓ Industry-standard compliance</span></td>
+              <td>Gamma 2.6, DCI white point. Must QC in actual theater environment.</td>
+            </tr>
+            <tr style="background: rgba(0,212,255,0.05);">
+              <td><strong>HDR Streaming</strong></td>
+              <td>ACES2065-1 master</td>
+              <td>ACES ODT → Rec.2020 PQ</td>
+              <td>Resolve HDR tools</td>
+              <td>HDR reference (1000 nits)</td>
+              <td><span class="benefit">✓ Enhanced dynamic range<br/>✓ Premium home viewing experience</span></td>
+              <td>HDR10: 1000 nits. Dolby Vision: 4000 nits + dynamic metadata.</td>
+            </tr>
+            <tr style="background: rgba(0,212,255,0.05);">
+              <td><strong>Web/Broadcast</strong></td>
+              <td>ACES2065-1 master</td>
+              <td>ACES ODT → Rec.709</td>
+              <td>Resolve, Media Encoder</td>
+              <td>Consumer TV reference</td>
+              <td><span class="benefit">✓ Broad compatibility<br/>✓ Consistent across platforms</span></td>
+              <td>Gamma 2.4 for TV. Each streaming platform has unique specifications.</td>
+            </tr>
+            <tr style="background: rgba(245,158,11,0.1);">
+              <td><strong>Archive</strong></td>
+              <td>ACES2065-1 (AP0)</td>
+              <td>None (digital negative)</td>
+              <td>OpenEXR 16-bit half</td>
+              <td>N/A</td>
+              <td><span class="benefit">✓ Future remaster capability<br/>✓ New format delivery without re-render</span></td>
+              <td>Include: Show LUTs, OCIO config v2.4.x, reference frames, grade metadata</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2) Rules (two-column grid, 6 items => 3 rows x 2 cols) -->
+    <section>
+      <h2><span class="section-icon">2</span>Production-Critical Implementation Rules</h2>
+      <div class="rules two-col-grid">
+        <div class="rule">
+          <span class="rule-number">1</span>
+          <strong>Always Work Scene-Referred</strong>
+          <span class="description">Author, render, and composite in ACEScg (linear AP1)</span>
+          <div class="example">
+            <strong>Example (Arnold):</strong>
+            Shaders in Arnold use ACEScg albedo values, area lights emit in ACEScg linear values, and all textures are converted via sRGB-Texture IDT into ACEScg. Mathematical operations remain linear and physically accurate.
+          </div>
+          <div class="why">
+            <strong>Why This Matters:</strong> Linear color space ensures accurate light bounces, proper motion blur calculations, and correct depth of field. Working in display-referred (sRGB) would break physical simulations and create unpredictable results.
+          </div>
+        </div>
+
+        <div class="rule">
+          <span class="rule-number">2</span>
+          <strong>View Transform, Never Bake</strong>
+          <span class="description">Apply ACES ODT only in viewer until final delivery</span>
+          <div class="example">
+            <strong>Example (Nuke):</strong>
+            Read EXR (ACEScg) → Set project OCIO to aces_1.3 config → Viewer LUT = ACES 1.0 SDR-video (Rec.709). The EXR file on disk stays ACEScg linear; Rec.709 exists only in the viewer for monitoring.
+          </div>
+          <div class="example">
+            <strong>Example (RV):</strong>
+            Load ACEScg EXR sequence → OCIO config.ocio active → Display transform set to P3-D65. The underlying EXR files remain untouched ACEScg linear data.
+          </div>
+          <div class="why">
+            <strong>Why This Matters:</strong> Baking viewing transforms = permanent data loss. Keeping everything in ACEScg means infinite re-delivery options without quality degradation.
+          </div>
+        </div>
+
+        <div class="rule">
+          <span class="rule-number">3</span>
+          <strong>Deliver by Display Medium</strong>
+          <span class="description">Each display technology needs specific encoding</span>
+          <div class="example">
+            <strong>Delivery Specifications:</strong>
+            • Cinema: DCI-P3 X'Y'Z', gamma 2.6<br/>
+            • HDR TV: Rec.2020 PQ, 1000–4000 nits peak<br/>
+            • Broadcast TV: Rec.709, gamma 2.4, 100 nits<br/>
+            • Web/Mobile: sRGB, gamma 2.2, varied peak
+          </div>
+          <div class="why">
+            <strong>When Baked:</strong> Only at delivery stage via Resolve/OCIO export. All upstream work remains in ACEScg.
+          </div>
+        </div>
+
+        <div class="rule">
+          <span class="rule-number">4</span>
+          <strong>Test Before Production Lock</strong>
+          <span class="description">Validate OCIO 2.4.x across all departments</span>
+          <div class="example">
+            <strong>Testing Protocol:</strong>
+            Phase 1: Install OCIO 2.4.x on test workstations<br/>
+            Phase 2: Render test asset through full pipeline<br/>
+            Phase 3: Validate color consistency across DCCs<br/>
+            Phase 4: Lock configuration and distribute to all teams
+          </div>
+          <div class="why">
+            <strong>Critical Validation:</strong> Version mismatch = color shifts. Test especially: Maya↔Nuke handoff, Substance→Arnold texture pipeline, RV↔Resolve viewing match.
+          </div>
+        </div>
+
+        <div class="rule">
+          <span class="rule-number">5</span>
+          <strong>Practical Contingencies</strong>
+          <span class="description">Real-world fallbacks that actually work</span>
+          <div class="example">
+            <strong>Emergency Protocols:</strong>
+            • Pre-baked Rec.709 LUT (.cube) for dailies viewing<br/>
+            • ACEScg→sRGB 3×3 matrix documented and tested<br/>
+            • Resolve project with manual pipeline ready<br/>
+            • Regular drill of emergency workflow
+          </div>
+          <div class="why">
+            <strong>Reality Check:</strong> Maintain simple viewing LUTs that can be loaded in any software. Keep masters in ACEScg — viewing can always be solved, but lost data cannot be recovered.
+          </div>
+        </div>
+
+        <div class="rule">
+          <span class="rule-number">6</span>
+          <strong>Archive = Future Revenue</strong>
+          <span class="description">ACES2065-1 protects long-term value</span>
+          <div class="example">
+            <strong>Complete Archive Package:</strong>
+            • All frames in ACES2065-1 AP0 (16-bit half EXR)<br/>
+            • Show look LUTs and creative decisions<br/>
+            • OCIO 2.4.x config (frozen copy)<br/>
+            • MacBeth chart reference renders<br/>
+            • Grade metadata and trim pass notes
+          </div>
+          <div class="why">
+            <strong>Business Impact:</strong> New display tech or delivery format later? Retrieve from ACES2065-1 and create new trims/ODTs without re-rendering.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3) Monitors + side-by-side configs -->
+    <section>
+      <h2><span class="section-icon">3</span>Monitor Hardware Specifications & Configuration</h2>
+      <div class="monitor-grid">
+        <div class="monitor-card">
+          <h4>Artist Workstation Monitors</h4>
+          <ul class="spec-list">
+            <li><strong>Type:</strong> sRGB/Rec.709 minimum</li>
+            <li><strong>Coverage:</strong> 100% sRGB</li>
+            <li><strong>Bit Depth:</strong> True 10-bit panel (not 8-bit+FRC)</li>
+            <li><strong>Calibration:</strong> Monthly, ΔE &lt; 3.0</li>
+            <li><strong>Examples:</strong> ASUS ProArt PA279, BenQ SW270C</li>
+          </ul>
+        </div>
+
+        <div class="monitor-card">
+          <h4>Color Critical / Review Monitors</h4>
+          <ul class="spec-list">
+            <li><strong>Type:</strong> P3-D65 capable reference</li>
+            <li><strong>Coverage:</strong> 98%+ DCI-P3</li>
+            <li><strong>Bit Depth:</strong> True 10-bit or 12-bit</li>
+            <li><strong>Calibration:</strong> Weekly, ΔE &lt; 2.0</li>
+            <li><strong>Examples:</strong> EIZO CG319X, FSI DM250</li>
+          </ul>
+        </div>
+
+        <div class="monitor-card">
+          <h4>HDR Grading Monitors</h4>
+          <ul class="spec-list">
+            <li><strong>Type:</strong> HDR1000 minimum</li>
+            <li><strong>Coverage:</strong> 90%+ Rec.2020</li>
+            <li><strong>Peak:</strong> 1000+ nits sustained</li>
+            <li><strong>Calibration:</strong> Before each grading session</li>
+            <li><strong>Examples:</strong> Sony BVM-HX310, Dolby PRM-4220</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Side-by-side config blocks -->
+      <div class="config-grid">
+        <div class="config-block">
+          <div class="label">NVIDIA GPU 10-BIT CONFIGURATION (FULL-PATH)</div>
+          <pre><code>NVIDIA Control Panel → Display → Change Resolution
+Apply the following settings:
+  Output color depth: 10 bpc
+  Output color format: RGB
+  Output dynamic range: Full
+
+Why: Enables full 10-bit pipeline from GPU to display</code></pre>
+        </div>
+
+        <div class="config-block">
+          <div class="label">HDR SIGNAL PATH VERIFICATION (FULL-PATH)</div>
+          <pre><code>Windows: Settings → Display → HDR: ON
+macOS: Displays → HDR capable display detected
+Resolve: Project Settings → HDR10+/Dolby Vision as applicable
+
+Verify: 10-bit 4:4:4 @ 60Hz signal path active</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-top: 20px;">
+        <h3>⚠️ Critical: Why 10-bit Matters</h3>
+        <p>8-bit = 256 levels per channel = visible banding in gradients<br/>
+        10-bit = 1024 levels per channel = smooth gradients essential for animation<br/>
+        <strong>Without 10-bit enabled, you're seeing less than 25% of the color information in your renders.</strong></p>
+      </div>
+    </section>
+
+    <!-- 4) DCC Guides (two-column grid) -->
+    <section>
+      <h2><span class="section-icon">4</span>DCC-Specific Configuration Guide</h2>
+      <p style="margin-bottom: 20px; color: var(--muted);">All applications configured for VFX Platform CY2025 standards with OCIO 2.4.x</p>
+
+      <div class="two-col-grid">
+        <div class="impl-card">
+          <h4>Maya</h4>
+          <div class="config-block">
+            <div class="label">Color Management Settings</div>
+            <pre><code>Windows → Settings → Color Management
+Color Management: Using OCIO Config
+Config Path: /show/color/aces_1.3/config.ocio
+Rendering Space: ACEScg
+View Transform: ACES 1.0 SDR-video (Rec.709)</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Houdini / Solaris</h4>
+          <div class="config-block">
+            <div class="label">Environment & Settings</div>
+            <pre><code>Edit → Color Settings
+Use OCIO Config File: ON
+Config: $OCIO environment variable
+Scene Linear Role: ACEScg
+Display: sRGB (ACES 1.0)</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Arnold (MtoA/HtoA)</h4>
+          <div class="config-block">
+            <div class="label">Render Settings</div>
+            <pre><code>Render Settings → Color Management
+Color Manager: OCIO
+Config: aces_1.3/config.ocio
+Rendering Space: ACEScg
+Auto-convert Textures: Enabled</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Karma (Houdini)</h4>
+          <div class="config-block">
+            <div class="label">Karma LOP Settings</div>
+            <pre><code>Karma Settings → Output → Color
+OCIO Config: Inherit from Houdini
+Source Color Space: ACEScg
+Output Display: sRGB
+Output View: ACES 1.0 SDR-video</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Nuke</h4>
+          <div class="config-block">
+            <div class="label">Project Settings</div>
+            <pre><code>Project Settings → Color
+Color Management: OCIO v2
+OpenColorIO Config: Custom
+Config: /show/color/aces_1.3/config.ocio
+Working Space: ACEScg</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Mari</h4>
+          <div class="config-block">
+            <div class="label">Color Profile Setup</div>
+            <pre><code>Preferences → Color
+Color Profile: OpenColorIO
+Configuration: aces_1.3
+8bit Painting: Utility - sRGB - Texture
+Float Painting: ACEScg</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Substance Painter</h4>
+          <div class="config-block">
+            <div class="label">Display Settings</div>
+            <pre><code>Display Settings → Tone Mapping
+Function: OpenColorIO
+Config: Browse → aces_1.3/config.ocio
+Display Device: sRGB
+View Transform: ACES 1.0 SDR-video</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Photoshop</h4>
+          <div class="config-block">
+            <div class="label">Color Settings (Limited ACES)</div>
+            <pre><code>Edit → Color Settings
+Working Space RGB: ProPhoto RGB
+Export: Convert to sRGB
+
+Note: Use EXR-IO plugin for ACEScg files
+Or use Affinity Photo for full OCIO support</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>RV</h4>
+          <div class="config-block">
+            <div class="label">OCIO Display Pipeline</div>
+            <pre><code>RV → Preferences → Color
+Enable OCIO: ON
+OCIO Config: aces_1.3/config.ocio
+File Rules: EXR → ACEScg
+Display: sRGB → ACES 1.0 SDR-video</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>DaVinci Resolve</h4>
+          <div class="config-block">
+            <div class="label">ACES Project Settings</div>
+            <pre><code>Project Settings → Color Management
+Color Science: ACEScc/ACEScct
+ACES Version: 1.3
+ACES Input Transform: ACEScg
+ACES Output Transform: Per delivery</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Adobe Premiere Pro</h4>
+          <div class="config-block">
+            <div class="label">Sequence Color Settings</div>
+            <pre><code>Sequence Settings → Color Space
+Working Color Space: ACEScg
+Display Color Space: Rec.709
+
+Note: Requires OCIO+ plugin or
+use Resolve for color-critical work</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Adobe Media Encoder</h4>
+          <div class="config-block">
+            <div class="label">Export Color Settings</div>
+            <pre><code>Export Settings → Effects
+Lumetri Look → Browse LUT
+Apply: ACEScg_to_Rec709.cube
+
+Note: For web deliverables only
+Use Resolve for master deliveries</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5) Texture Pipeline -->
+    <section>
+      <h2><span class="section-icon">5</span>Texture Pipeline Specifications</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Texture Type</th>
+              <th>Source Format</th>
+              <th>Import Transform</th>
+              <th>Working Space</th>
+              <th>Purpose &amp; Validation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Albedo/Base Color</strong></td>
+              <td>sRGB PNG/TIF/TGA</td>
+              <td>Utility - sRGB - Texture</td>
+              <td>ACEScg</td>
+              <td><span class="benefit">Purpose: Linearizes color for accurate light interaction</span><br/>Validate: No values &gt; 1.0 after IDT application</td>
+            </tr>
+            <tr>
+              <td><strong>Normal Maps</strong></td>
+              <td>Linear PNG/TGA</td>
+              <td>Raw/Utility - Raw</td>
+              <td>Data (no color space)</td>
+              <td><span class="benefit">Purpose: Vector data for surface detail</span><br/>Validate: Blue channel ~0.5–1.0, no color transform applied</td>
+            </tr>
+            <tr>
+              <td><strong>Roughness/Metallic</strong></td>
+              <td>Linear grayscale</td>
+              <td>Raw/Utility - Raw</td>
+              <td>Data</td>
+              <td><span class="benefit">Purpose: Physical surface properties</span><br/>Validate: Values strictly 0–1, no color management</td>
+            </tr>
+            <tr>
+              <td><strong>Emission Maps</strong></td>
+              <td>sRGB or HDR</td>
+              <td>sRGB IDT or Linear</td>
+              <td>ACEScg</td>
+              <td><span class="benefit">Purpose: Self-illuminated surfaces</span><br/>Validate: Can exceed 1.0 for bloom/glow effects</td>
+            </tr>
+            <tr>
+              <td><strong>HDR Environments</strong></td>
+              <td>EXR/HDR (32-bit float)</td>
+              <td>Linear → ACEScg</td>
+              <td>ACEScg</td>
+              <td><span class="benefit">Purpose: Image-based lighting</span><br/>Validate: Check dynamic range, no negative values</td>
+            </tr>
+            <tr>
+              <td><strong>Displacement</strong></td>
+              <td>EXR (32-bit float)</td>
+              <td>Raw (no transform)</td>
+              <td>Data</td>
+              <td><span class="benefit">Purpose: Geometric surface detail</span><br/>Validate: Centered at 0.5 or 0.0 per pipeline specs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6) Env Config -->
+    <section>
+      <h2><span class="section-icon">6</span>Environment Configuration</h2>
+      <div class="config-block">
+        <div class="label">Required Environment Variables (Linux/macOS)</div>
+        <pre><code># OCIO Configuration - VFX Platform CY2025
+export OCIO=/show/[SHOWNAME]/color/ocio_2.4.x/aces_1.3/config.ocio
+export OCIO_ACTIVE_DISPLAYS="sRGB,Rec.709,P3-D65,P3-DCI" 
+export OCIO_ACTIVE_VIEWS="ACES 1.0 SDR-video,Un-tone-mapped,Show Look"
+
+# Validate installation
+ociocheck
+# Expected: "OpenColorIO 2.4.0" or higher
+
+# Test transform
+ociobakelut --help
+# Should show version 2.4.x</code></pre>
+      </div>
+
+      <div class="config-block">
+        <div class="label">Windows Environment Setup</div>
+        <pre><code># Set in System Environment Variables
+OCIO = C:\show\[SHOWNAME]\color\ocio_2.4.x\aces_1.3\config.ocio
+OCIO_ACTIVE_DISPLAYS = sRGB,Rec.709,P3-D65
+OCIO_ACTIVE_VIEWS = "ACES 1.0 SDR-video,Un-tone-mapped"
+
+# Verify in Command Prompt:
+echo %OCIO%
+# Should show full path to config.ocio</code></pre>
+      </div>
+    </section>
+
+    <!-- 7) Pre-Production Checklist -->
+    <section>
+      <h2><span class="section-icon">7</span>Pre-Production Testing Checklist</h2>
+
+      <h3>Phase 1: Configuration Testing</h3>
+      <ul class="checklist">
+        <li>Install OCIO 2.4.x on representative workstations from each department</li>
+        <li>Verify aces_1.3 config loads correctly in all DCCs</li>
+        <li>Test texture IDT workflow: sRGB source → ACEScg conversion → render</li>
+        <li>Confirm GPU 10-bit output enabled on all color-critical workstations</li>
+        <li>Document any application-specific issues or version conflicts</li>
+      </ul>
+
+      <h3>Phase 2: Pipeline Integration</h3>
+      <ul class="checklist">
+        <li>Complete test asset: Model → Texture → Lookdev → Light → Render → Comp → Review</li>
+        <li>Verify color match: Maya viewport = Nuke viewer = RV playback = Resolve output</li>
+        <li>Test emergency fallback: Generate and validate .cube LUT for dailies</li>
+        <li>Render MacBeth ColorChecker through full pipeline for validation</li>
+        <li>Test archive and retrieval of ACES2065-1 masters</li>
+      </ul>
+
+      <h3>Phase 3: Lock and Deploy</h3>
+      <ul class="checklist">
+        <li>Freeze OCIO 2.4.x version — no updates during production without written approval</li>
+        <li>Deploy config to all machines via IT management system</li>
+        <li>Create reference chart renders for ongoing QC (store with assets)</li>
+        <li>Department heads sign-off on color pipeline before first shot</li>
+        <li>Schedule regular validation meetings for first quarter of production</li>
+      </ul>
+    </section>
+
+    <!-- 8) Stylized Animation Notes -->
+    <section>
+      <h2><span class="section-icon">8</span>Stylized Animation Considerations</h2>
+      <div class="info-box">
+        <h3>📎 CGI Animation vs VFX Pipeline Differences</h3>
+        <p><strong>Key Distinction:</strong> CGI stylized animation doesn't use CDL (Color Decision List) workflows from live-action VFX.</p>
+        <p><strong>Instead of CDLs, we use:</strong></p>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li><strong>Look Development LUTs:</strong> Artistic style choices created during pre-production</li>
+          <li><strong>Show Look Transforms:</strong> Applied as non-destructive view layers</li>
+          <li><strong>Grade Nodes:</strong> Shot-specific adjustments in Nuke or Resolve</li>
+          <li><strong>Creative Metadata:</strong> Document artistic intent separately from technical pipeline</li>
+        </ul>
+        <p style="margin-top: 12px;"><strong>Why Different:</strong> Live-action VFX uses ASC-CDL to match photographed plates. Pure CG animation creates its look from scratch, requiring different creative tools while maintaining the same technical color pipeline.</p>
+      </div>
+    </section>
+
+    <!-- 9) Quick Commands (two-column grid) -->
+    <section>
+      <h2><span class="section-icon">9</span>Quick Reference Commands</h2>
+      <div class="two-col-grid">
+        <div class="impl-card">
+          <h4>Validate OCIO Installation</h4>
+          <div class="config-block">
+            <pre><code># Check version
+ociobakelut --version
+
+# Validate config
+ociocheck
+
+Expected: OpenColorIO 2.4.x</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Test Color Transform</h4>
+          <div class="config-block">
+            <pre><code># Using oiiotool
+oiiotool input.exr \
+  --colorconvert ACEScg "Output - Rec.709" \
+  -o test_rec709.jpg</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Generate Emergency LUT</h4>
+          <div class="config-block">
+            <pre><code># Create Rec.709 viewing LUT
+ociobakelut \
+  --inputspace ACEScg \
+  --outputspace "Output - Rec.709" \
+  --format flame \
+  --output emergency_rec709.cube</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Verify EXR Metadata</h4>
+          <div class="config-block">
+            <pre><code># Check for primaries
+exrheader render_v001.exr | \
+  grep -E "chromaticities|primary"
+
+# Should show AP1 primaries</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Batch Color Space Check</h4>
+          <div class="config-block">
+            <pre><code># Python script for validation
+import OpenImageIO as oiio
+img = oiio.ImageInput.open("test.exr")
+spec = img.spec()
+print(spec.get_string_attribute("oiio:ColorSpace"))</code></pre>
+          </div>
+        </div>
+
+        <div class="impl-card">
+          <h4>Monitor Calibration Check</h4>
+          <div class="config-block">
+            <pre><code># DisplayCAL command line
+displaycal-apply-profiles
+
+# Verify current profile
+colord-kit get-devices
+
+# Target: ΔE &lt; 2.0</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Production Readiness -->
+    <div class="critical-alert" style="margin-top: 32px;">
+      <h3>🎯 Production Readiness Checklist</h3>
+      <p><strong>This document is a comprehensive draft for stakeholder review and validation.</strong></p>
+      <p>Before production begins, ensure:</p>
+      <ul style="margin: 12px 0; padding-left: 24px;">
+        <li>✓ All department heads have reviewed and provided feedback</li>
+        <li>✓ Test pipeline validated with actual production assets (not just spheres)</li>
+        <li>✓ OCIO 2.4.x tested for compatibility with all software versions</li>
+        <li>✓ Monitor calibration schedule established with responsible parties</li>
+        <li>✓ Emergency procedures tested and documented</li>
+        <li>✓ Archive workflow validated end-to-end</li>
+      </ul>
+      <p style="margin-top: 16px;"><strong>Remember:</strong> Preserve maximum color information in ACEScg and validate viewing transforms frequently.</p>
+    </div>
+
+  </div>
+</body>
+</html>
